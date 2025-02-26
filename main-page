@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RCL Website</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
+        input, button { margin: 10px; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Welcome to the RCL Website</h1>
+    
+    <h2>Submit an Anonymous Suggestion</h2>
+    <input type="text" id="suggestionInput" placeholder="Enter your suggestion">
+    <button onclick="submitSuggestion()">Submit</button>
+    
+    <h2>Suggestions</h2>
+    <ul id="suggestionsList"></ul>
+    
+    <script>
+        const supabaseUrl = "YOUR_SUPABASE_URL";
+        const supabaseKey = "YOUR_ANON_KEY";
+        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        async function submitSuggestion() {
+            const suggestionText = document.getElementById("suggestionInput").value;
+            if (!suggestionText) return alert("Please enter a suggestion");
+            
+            const { data, error } = await supabase.from("suggestions").insert([
+                { suggestion_text: suggestionText, status: "Pending" }
+            ]);
+            if (error) {
+                console.error("Error submitting suggestion:", error);
+            } else {
+                console.log("Suggestion submitted:", data);
+                document.getElementById("suggestionInput").value = "";
+                fetchSuggestions();
+            }
+        }
+
+        async function fetchSuggestions() {
+            let { data: suggestions, error } = await supabase.from("suggestions").select("*");
+            if (error) {
+                console.error("Error fetching suggestions:", error);
+            } else {
+                let list = document.getElementById("suggestionsList");
+                list.innerHTML = "";
+                suggestions.forEach(suggestion => {
+                    let li = document.createElement("li");
+                    li.textContent = suggestion.suggestion_text + " - " + suggestion.status;
+                    list.appendChild(li);
+                });
+            }
+        }
+
+        fetchSuggestions();
+    </script>
+</body>
+</html>
