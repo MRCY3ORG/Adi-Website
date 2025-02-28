@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RCL Website</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
         input, button { margin: 10px; padding: 10px; }
@@ -15,39 +15,51 @@
     
     <h2>Submit an Anonymous Suggestion</h2>
     <input type="text" id="suggestionInput" placeholder="Enter your suggestion">
-    <button onclick="submitSuggestion()">Submit</button>
+    <button id="submitBtn">Submit</button>
     
     <h2>Suggestions</h2>
     <ul id="suggestionsList"></ul>
     
     <script>
+        const supabaseUrl = "https://tdunrqtfoxpfqcqjxwig.supabase.co";
+        const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdW5ycXRmb3hwZnFjcWp4d2lnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA1Mzg5OTgsImV4cCI6MjA1NjExNDk5OH0.ltAA4OYYxxANwiTknskauT4yYGsqrl4yRnY7VKCdGFc";
         
-import { createClient } from '@supabase/supabase-js'
+        // Ensure Supabase is properly initialized before use
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-
-const supabase = createClient(supabaseUrl, supabaseKey)
-
-        async function submitSuggestion() {
-            const suggestionText = document.getElementById("suggestionInput").value;
-            if (!suggestionText) return alert("Please enter a suggestion");
-            
-            const { data, error } = await supabase.from("suggestions").insert([
-                { suggestion_text: suggestionText, status: "Pending" }
-            ]);
-            if (error) {
-                console.error("Error submitting suggestion:", error);
-            } else {
-                console.log("Suggestion submitted:", data);
-                document.getElementById("suggestionInput").value = "";
-                fetchSuggestions();
+        document.getElementById("submitBtn").addEventListener("click", async () => {
+            const suggestionText = document.getElementById("suggestionInput").value.trim();
+            if (!suggestionText) {
+                alert("Please enter a suggestion");
+                return;
             }
-        }
+            
+            try {
+                const { data, error } = await supabase.from("suggestions").insert([
+                    { suggestion_text: suggestionText, status: "Pending" }
+                ]);
+                
+                if (error) {
+                    console.error("Error submitting suggestion:", error);
+                    alert("Error submitting suggestion. Please try again.");
+                } else {
+                    console.log("Suggestion submitted:", data);
+                    document.getElementById("suggestionInput").value = "";
+                    fetchSuggestions();
+                }
+            } catch (err) {
+                console.error("Unexpected error:", err);
+            }
+        });
 
         async function fetchSuggestions() {
-            let { data: suggestions, error } = await supabase.from("suggestions").select("*");
-            if (error) {
-                console.error("Error fetching suggestions:", error);
-            } else {
+            try {
+                const { data: suggestions, error } = await supabase.from("suggestions").select("*");
+                if (error) {
+                    console.error("Error fetching suggestions:", error);
+                    return;
+                }
+                
                 let list = document.getElementById("suggestionsList");
                 list.innerHTML = "";
                 suggestions.forEach(suggestion => {
@@ -55,10 +67,12 @@ const supabase = createClient(supabaseUrl, supabaseKey)
                     li.textContent = suggestion.suggestion_text + " - " + suggestion.status;
                     list.appendChild(li);
                 });
+            } catch (err) {
+                console.error("Unexpected error fetching suggestions:", err);
             }
         }
 
-        fetchSuggestions();
+        document.addEventListener("DOMContentLoaded", fetchSuggestions);
     </script>
 </body>
 </html>
